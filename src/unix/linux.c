@@ -1419,6 +1419,15 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
     if (w->events == 0)
       op = EPOLL_CTL_ADD;
 
+    /* Skip a redundant EPOLL_CTL_MOD when the interest mask is unchanged.
+     * uv__io_stop() re-queues the fd even on a no-op stop (e.g. POLLOUT is
+     * cleared after every write while POLLIN stays armed), so the watcher
+     * reaches here with w->events == w->pevents. With the io_uring epoll
+     * control ring each such MOD costs a full io_uring_enter; the kernel
+     * already holds the correct mask, so there is nothing to submit. */
+    if (op == EPOLL_CTL_MOD && (unsigned) w->events == w->pevents)
+      continue;
+
     w->events = w->pevents;
     e.events = w->pevents;
     e.data.fd = w->fd;
