@@ -161,6 +161,11 @@ int uv__next_timeout(const uv_loop_t* loop) {
 }
 
 
+int uv_next_timer_timeout(const uv_loop_t* loop) {
+  return uv__next_timeout(loop);
+}
+
+
 void uv__run_timers(uv_loop_t* loop) {
   struct heap_node* heap_node;
   uv_timer_t* handle;
